@@ -104,20 +104,27 @@ sale_7 = Sale(price=700, date_sale='2023-11-17 11:00:00', count=1, stock=stock_7
 session.add_all([sale_1, sale_2, sale_3, sale_4, sale_5, sale_6, sale_7])
 session.commit()
 
-autor = input('Автор - ')
-
-subq = session.query(Book).join(Stock.book).subquery()
-query = session.query(Publisher).join(subq, Publisher.id == subq.c.id_publisher).filter(Publisher.name == autor).all()
-for publisher in query:
-    for book in publisher.book:
-        for stock in book.stock:
-            sale_query = session.query(Stock).join(Sale.stock).filter(Sale.id_stock == stock.id).all()
-            for stock_1 in sale_query:
-                shop_query = session.query(Shop).join(Stock.shop).filter(Shop.id == stock_1.id_shop).all()
-                for shop in shop_query:
-                    shop_name = shop.name
-                for sale in stock_1.sale:
-                    print(book.title, shop_name, sale.price, sale.date_sale, sep=' | ')
 
 
-session.close()
+def get_sale(autor_or_id):
+    query = session.query(Book.title, Shop.name, Sale.price, Sale.date_sale)\
+        .select_from(Shop)\
+        .join(Stock)\
+        .join(Book)\
+        .join(Publisher)\
+        .join(Sale)
+    if autor_or_id.isdigit():
+        result = query.filter(Publisher.id == autor_or_id).all()
+    else:
+        result = query.filter(Publisher.name == autor_or_id).all()
+    for title, shop, sale, data_of_sale in result:
+        print(f'{title} | {shop} | {sale} | {data_of_sale}')
+
+if __name__ == '__main__':
+    autor_or_id = input()
+    get_sale(autor_or_id)
+    session.close()
+
+
+
+
